@@ -1,0 +1,23 @@
+# Secrets — never commit
+.env
+.env.local
+*Secrets*
+
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+build/
+dist/
+.venv/
+venv/
+
+# Test / tooling
+.pytest_cache/
+.coverage
+htmlcov/
+
+# Local data artifacts (synced league snapshots, caches)
+data/*.db
+data/*.json
+cache/

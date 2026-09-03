@@ -1,0 +1,27 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "ff-drafter"
+version = "0.1.0"
+description = "Personal ESPN Fantasy Football trade and waiver assistant"
+requires-python = ">=3.11"
+dependencies = [
+    "espn-api>=0.44",
+    "requests>=2.31",
+    "click>=8.1",
+    "python-dotenv>=1.0",
+]
+
+[project.optional-dependencies]
+dev = ["pytest>=8.0"]
+
+[project.scripts]
+ffdraft = "ff_drafter.cli:cli"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
