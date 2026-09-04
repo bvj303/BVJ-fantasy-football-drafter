@@ -80,12 +80,12 @@ class EspnClient:
     def _to_player(self, p: Any, team_name: Optional[str]) -> Player:
         return Player(
             name=str(getattr(p, "name", "") or ""),
-            espn_id=getattr(p, "playerId", None),
+            espn_id=_int_or_none(getattr(p, "playerId", None)),
             position=getattr(p, "position", "") or "",
             pro_team=getattr(p, "proTeam", "") or "",
             lineup_slot=getattr(p, "lineupSlot", "") or "",
             team_name=team_name,
-            espn_injury_status=getattr(p, "injuryStatus", None),
+            espn_injury_status=_text_or_none(getattr(p, "injuryStatus", None)),
             injured=bool(getattr(p, "injured", False)),
             total_points=_num(getattr(p, "total_points", 0.0)),
             projected_total_points=_num(getattr(p, "projected_total_points", 0.0)),
@@ -95,7 +95,7 @@ class EspnClient:
             percent_started=_num(getattr(p, "percent_started", 0.0)),
             position_rank=getattr(p, "posRank", 0) or 0,
             eligible_slots=list(getattr(p, "eligibleSlots", []) or []),
-            acquisition_type=getattr(p, "acquisitionType", None),
+            acquisition_type=_text_or_none(getattr(p, "acquisitionType", None)),
         )
 
     def fetch_free_agents(self, size: int = 100,
@@ -165,6 +165,28 @@ def _num(value: Any) -> float:
         return float(value)
     except (TypeError, ValueError):
         return 0.0
+
+
+def _text_or_none(value: Any) -> Optional[str]:
+    """Normalize a scalar string field coming out of espn_api.
+
+    The library's `json_parsing` helper returns an empty list for any field
+    that is absent from the underlying JSON, so an uninjured player's
+    `injuryStatus` and a free agent's `acquisitionType` arrive as `[]` rather
+    than None. Left alone, those lists blow up the SQLite insert. Anything that
+    is not a plain, non-empty scalar becomes None.
+    """
+    if value is None or isinstance(value, (list, tuple, dict, set)):
+        return None
+    text = str(value).strip()
+    return text or None
+
+
+def _int_or_none(value: Any) -> Optional[int]:
+    try:
+        return int(value)
+    except (TypeError, ValueError):
+        return None
 
 
 def _epoch_millis_to_utc(millis: Any) -> datetime:

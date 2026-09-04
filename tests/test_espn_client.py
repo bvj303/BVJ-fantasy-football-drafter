@@ -92,3 +92,54 @@ def test_unknown_my_team_name_raises_with_available_names(fake_espn_league):
     c = EspnClient(fake_espn_league, my_team_name="Not A Team")
     with pytest.raises(ValueError, match="Gridiron Goblins"):
         c.fetch_my_team()
+
+
+# --- regression: espn_api yields [] for absent scalar fields ---------------
+# Real ESPN data returns an empty list (not None) for any field missing from
+# the underlying JSON: acquisitionType on every free agent, injuryStatus on
+# defenses/coaches. Those must normalize to None or the SQLite insert fails.
+
+def _league_with(player):
+    from conftest import FakeEspnLeague, FakeEspnTeam
+    team = FakeEspnTeam(1, "Team Bologna", [player])
+    return EspnClient(FakeEspnLeague([team], free_agents=[player]),
+                      my_team_name="Team Bologna")
+
+
+def test_absent_injury_status_list_becomes_none():
+    from conftest import FakeEspnPlayer
+    p = FakeEspnPlayer("Jaguars D/ST", 12345, "D/ST", injuryStatus=[])
+    player = _league_with(p).fetch_my_team().roster[0]
+    assert player.espn_injury_status is None
+
+
+def test_absent_acquisition_type_list_becomes_none():
+    from conftest import FakeEspnPlayer
+    p = FakeEspnPlayer("Josh Jacobs", 23456, "RB", acquisitionType=[])
+    player = _league_with(p).fetch_free_agents()[0]
+    assert player.acquisition_type is None
+
+
+def test_empty_string_injury_status_is_normalized_to_none():
+    from conftest import FakeEspnPlayer
+    p = FakeEspnPlayer("Someone", 34567, "WR", injuryStatus="")
+    assert _league_with(p).fetch_my_team().roster[0].espn_injury_status is None
+
+
+def test_non_int_player_id_becomes_none():
+    from conftest import FakeEspnPlayer
+    p = FakeEspnPlayer("Ghost", None, "WR")
+    p.playerId = []
+    assert _league_with(p).fetch_my_team().roster[0].espn_id is None
+
+
+def test_snapshot_with_absent_fields_is_storable(tmp_path):
+    """The end-to-end guard: a snapshot of such players must write to SQLite."""
+    from conftest import FakeEspnPlayer
+    from ff_drafter.storage import Storage
+    p = FakeEspnPlayer("Chiefs D/ST", 45678, "D/ST", injuryStatus=[],
+                       acquisitionType=[])
+    snap = _league_with(p).build_snapshot()
+    with Storage(tmp_path / "reg.db") as store:
+        store.write_snapshot(snap)
+        assert store.latest_snapshot().teams[0].roster[0].name == "Chiefs D/ST"
