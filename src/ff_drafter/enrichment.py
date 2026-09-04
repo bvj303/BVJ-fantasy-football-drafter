@@ -42,13 +42,26 @@ def normalize_name(name: Optional[str]) -> str:
 class Enricher:
     def __init__(self, sleeper_players: dict[str, Any],
                  trending_add: Optional[dict[str, int]] = None,
-                 trending_drop: Optional[dict[str, int]] = None):
+                 trending_drop: Optional[dict[str, int]] = None,
+                 projections_season: Optional[dict[str, dict]] = None,
+                 projections_week: Optional[dict[str, dict]] = None,
+                 scoring_format: str = "ppr"):
         self._players = sleeper_players or {}
         self._trending_add = trending_add or {}
         self._trending_drop = trending_drop or {}
+        self._proj_season = projections_season or {}
+        self._proj_week = projections_week or {}
+        self._scoring_format = scoring_format if scoring_format in \
+            ("ppr", "half", "std") else "ppr"
         self._by_espn_id: dict[str, dict] = {}
         self._by_name_position: dict[tuple[str, str], list[dict]] = {}
         self._build_indexes()
+
+    def _projection(self, source: dict, sleeper_id: str) -> Optional[float]:
+        record = source.get(sleeper_id)
+        if not record:
+            return None
+        return record.get(self._scoring_format)
 
     def _build_indexes(self) -> None:
         for player_id, record in self._players.items():
@@ -113,6 +126,8 @@ class Enricher:
             depth_chart_order=record.get("depth_chart_order"),
             trending_add_count=self._trending_add.get(sleeper_id),
             trending_drop_count=self._trending_drop.get(sleeper_id),
+            sleeper_proj_season=self._projection(self._proj_season, sleeper_id),
+            sleeper_proj_week=self._projection(self._proj_week, sleeper_id),
         )
 
     def enrich_all(self, players: list[Player]) -> list[Player]:

@@ -51,6 +51,10 @@ class Player:
     trending_add_count: Optional[int] = None
     trending_drop_count: Optional[int] = None
 
+    # --- Sleeper projections, already converted to the league's scoring ---
+    sleeper_proj_season: Optional[float] = None
+    sleeper_proj_week: Optional[float] = None
+
     # Slots that only ever hold a player who is not in the starting lineup.
     BENCH_SLOTS = ("BE", "IR", "FA", "")
 
@@ -144,6 +148,8 @@ class LeagueSnapshot:
     teams: list[Team] = field(default_factory=list)
     free_agents: list[Player] = field(default_factory=list)
     activity: list[Activity] = field(default_factory=list)
+    scoring_format: str = "ppr"
+    lineup_slots: dict[str, int] = field(default_factory=dict)
 
     @property
     def my_team(self) -> Optional[Team]:
@@ -161,6 +167,8 @@ class LeagueSnapshot:
             "league_id": self.league_id,
             "year": self.year,
             "current_week": self.current_week,
+            "scoring_format": self.scoring_format,
+            "lineup_slots": self.lineup_slots,
             "my_team": my.to_dict() if my else None,
             "teams": [t.to_dict() for t in self.teams],
             "free_agents": [p.to_dict() for p in self.free_agents],
