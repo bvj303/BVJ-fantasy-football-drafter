@@ -12,6 +12,9 @@ from typing import Any, Optional
 from .config import Config
 from .models import Activity, LeagueSnapshot, Player, Team
 
+# Slots that never hold a starter, excluded from the lineup structure.
+_NON_STARTING_SLOTS = {"BE", "IR", "", "ER"}
+
 
 def build_espn_client(config: Config) -> "EspnClient":
     """Connect to the real ESPN API using the configured credentials."""
@@ -120,6 +123,35 @@ class EspnClient:
                 ))
         return rows
 
+    # --- league settings ----------------------------------------------------
+
+    def scoring_format(self) -> str:
+        """'ppr', 'half', or 'std', inferred from the points-per-reception rule.
+
+        Defaults to 'ppr' when the setting can't be read — the most common
+        modern format — rather than silently mis-scoring as standard.
+        """
+        settings = getattr(self._league, "settings", None)
+        rules = getattr(settings, "scoring_format", None) or []
+        for rule in rules:
+            if not isinstance(rule, dict):
+                continue
+            if rule.get("id") == 53 or str(rule.get("abbr", "")).upper() == "REC":
+                points = _num(rule.get("points"))
+                if points >= 1.0:
+                    return "ppr"
+                if points >= 0.5:
+                    return "half"
+                return "std"
+        return "ppr"
+
+    def lineup_slots(self) -> dict[str, int]:
+        """Starting-lineup slot counts, excluding bench/IR."""
+        settings = getattr(self._league, "settings", None)
+        counts = getattr(settings, "position_slot_counts", None) or {}
+        return {slot: int(n) for slot, n in counts.items()
+                if n and slot not in _NON_STARTING_SLOTS}
+
     # --- snapshot -----------------------------------------------------------
 
     def build_snapshot(self, free_agent_size: int = 100,
@@ -132,6 +164,8 @@ class EspnClient:
             teams=self.fetch_teams(),
             free_agents=self.fetch_free_agents(size=free_agent_size),
             activity=self.fetch_recent_activity(size=activity_size),
+            scoring_format=self.scoring_format(),
+            lineup_slots=self.lineup_slots(),
         )
 
 

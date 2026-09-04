@@ -13,6 +13,7 @@ from typing import Optional
 
 import click
 
+from .analysis import analyze_team, proj_value
 from .config import Config, ConfigError
 from .enrichment import Enricher
 from .espn_client import EspnClient, build_espn_client
@@ -67,17 +68,21 @@ def sync(fa_size: int, activity_size: int) -> None:
             "current — they expire when you log out."
         ) from None
 
-    click.echo("Fetching injury and trend data from Sleeper...")
+    click.echo("Fetching injury, trend, and projection data from Sleeper...")
     sleeper = SleeperClient(cache_dir=cfg.cache_dir)
     try:
         enricher = Enricher(
             sleeper.fetch_players(),
             trending_add=sleeper.fetch_trending("add"),
             trending_drop=sleeper.fetch_trending("drop"),
+            projections_season=sleeper.fetch_projections(snapshot.year),
+            projections_week=sleeper.fetch_projections(
+                snapshot.year, week=snapshot.current_week or 1),
+            scoring_format=snapshot.scoring_format,
         )
     except Exception as exc:
         click.echo(f"  ! Sleeper unavailable ({exc}); "
-                   "continuing without injury/trend data.", err=True)
+                   "continuing without injury/trend/projection data.", err=True)
         enricher = Enricher({})
 
     for team in snapshot.teams:
@@ -185,16 +190,69 @@ def league() -> None:
 
 
 @cli.command()
+@click.option("--team", "team_name", default=None,
+              help="Team to analyze. Defaults to your own team.")
+def analyze(team_name: Optional[str]) -> None:
+    """Grade a roster slot-by-slot against the rest of the league."""
+    cfg = _config()
+    snapshot = _load_latest(cfg)
+    try:
+        report = analyze_team(snapshot, team_name=team_name)
+    except ValueError as exc:
+        raise click.ClickException(str(exc)) from None
+
+    click.echo(f"\nRoster analysis — {report.team_name}  "
+               f"({report.scoring_format.upper()} scoring)")
+    click.echo("=" * 78)
+    click.echo(f"{'Slot':<7} {'Player':<24} {'Proj':>7} {'LgMed':>7} "
+               f"{'Gap':>7} {'vs Lg':>6}")
+    for s in report.slots:
+        pct = f"{s.percentile*100:.0f}%"
+        flag = "  <-- weak" if s.gap_to_median < 0 else ""
+        click.echo(f"{s.label:<7} {(s.player or '(empty)')[:22]:<24} "
+                   f"{s.my_proj:>7.1f} {s.league_median:>7.1f} "
+                   f"{s.gap_to_median:>+7.1f} {pct:>6}{flag}")
+
+    if report.weak_spots:
+        click.echo("\nWeakest spots (below your league's median starter):")
+        for s in report.weak_spots:
+            click.echo(f"  {s.label} — {s.player or '(empty)'}: "
+                       f"{s.gap_to_median:+.1f} vs median "
+                       f"(you're ahead of only {s.percentile*100:.0f}% of teams)")
+    else:
+        click.echo("\nNo starting slot sits below your league's median. Strong roster.")
+
+    if report.injury_flags:
+        click.echo("\nInjury watch (starters):")
+        for f in report.injury_flags:
+            click.echo(f"  {f.player}: {f.detail}")
+
+    if report.projection_disagreements:
+        click.echo("\nProjection disagreements (ESPN vs Sleeper — buy/sell/uncertainty):")
+        for f in report.projection_disagreements:
+            click.echo(f"  {f.player}: {f.detail}")
+
+    click.echo("\nStartable depth by position (players at or above replacement):")
+    click.echo("  " + "  ".join(f"{pos}:{n}"
+                                 for pos, n in sorted(report.bench_depth.items())))
+    click.echo("\nFor concrete trades or pickups to fix these, run "
+               "/trade-finder or /waiver-targets.")
+
+
+@cli.command()
 @click.option("--path", "path", default=None, type=click.Path(),
               help="Where to write the JSON brief.")
 def export(path: Optional[str]) -> None:
-    """Write the latest snapshot as JSON for the analysis slash commands."""
+    """Write the latest snapshot + roster analysis as JSON for the slash commands."""
     cfg = _config()
     snapshot = _load_latest(cfg)
+    data = snapshot.to_dict()
+    if snapshot.my_team is not None:
+        data["analysis"] = analyze_team(snapshot).to_dict()
     target = Path(path) if path else Path(cfg.export_path)
     target.parent.mkdir(parents=True, exist_ok=True)
     with open(target, "w") as fh:
-        json.dump(snapshot.to_dict(), fh, indent=2)
+        json.dump(data, fh, indent=2)
     click.echo(f"Wrote {target}")
 
 
@@ -223,10 +281,11 @@ def history(player_name: str) -> None:
 
 def _player_header() -> str:
     return (f"{'Slot':<5} {'Pos':<4} {'Player':<26} {'Tm':<4} {'Pts':>7} "
-            f"{'Proj':>7} {'Own%':>6}  Status")
+            f"{'ESPN':>7} {'Sleep':>7} {'Own%':>6}  Status")
 
 
 def _player_row(p) -> str:
+    sl = f"{p.sleeper_proj_season:.1f}" if p.sleeper_proj_season is not None else "-"
     status_bits = []
     if p.injury_status:
         body = f" ({p.injury_body_part})" if p.injury_body_part else ""
@@ -239,7 +298,7 @@ def _player_row(p) -> str:
         status_bits.append(f"-{p.trending_drop_count:,} drops")
     return (f"{p.lineup_slot:<5} {p.position:<4} {p.name[:24]:<26} "
             f"{p.pro_team:<4} {p.total_points:>7.1f} "
-            f"{p.projected_total_points:>7.1f} {p.percent_owned:>6.1f}  "
+            f"{p.projected_total_points:>7.1f} {sl:>7} {p.percent_owned:>6.1f}  "
             + ", ".join(status_bits))
 
 

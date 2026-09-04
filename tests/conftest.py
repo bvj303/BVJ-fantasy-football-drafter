@@ -153,3 +153,13 @@ def fake_espn_league():
     return FakeEspnLeague([my_team, rival],
                           free_agents=[spears, otton, benson, unknown],
                           activity=activity)
+
+
+@pytest.fixture
+def proj_season():
+    return load_fixture("sleeper_proj_season.json")
+
+
+@pytest.fixture
+def proj_week1():
+    return load_fixture("sleeper_proj_week1.json")

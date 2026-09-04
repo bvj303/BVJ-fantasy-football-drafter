@@ -143,3 +143,53 @@ def test_snapshot_with_absent_fields_is_storable(tmp_path):
     with Storage(tmp_path / "reg.db") as store:
         store.write_snapshot(snap)
         assert store.latest_snapshot().teams[0].roster[0].name == "Chiefs D/ST"
+
+
+# --- scoring / lineup detection --------------------------------------------
+
+class _Settings:
+    def __init__(self, scoring_format=None, position_slot_counts=None):
+        self.scoring_format = scoring_format
+        self.position_slot_counts = position_slot_counts
+
+
+def _client_with_settings(settings):
+    from conftest import FakeEspnLeague, FakeEspnPlayer, FakeEspnTeam
+    league = FakeEspnLeague([FakeEspnTeam(1, "Team Bologna",
+                                          [FakeEspnPlayer("X", 1, "RB")])])
+    league.settings = settings
+    return EspnClient(league, my_team_name="Team Bologna")
+
+
+def test_full_ppr_is_detected():
+    s = _Settings(scoring_format=[{"abbr": "REC", "id": 53, "points": 1.0}])
+    assert _client_with_settings(s).scoring_format() == "ppr"
+
+
+def test_half_ppr_is_detected():
+    s = _Settings(scoring_format=[{"abbr": "REC", "id": 53, "points": 0.5}])
+    assert _client_with_settings(s).scoring_format() == "half"
+
+
+def test_standard_scoring_is_detected():
+    s = _Settings(scoring_format=[{"abbr": "REC", "id": 53, "points": 0.0}])
+    assert _client_with_settings(s).scoring_format() == "std"
+
+
+def test_scoring_defaults_to_ppr_when_unknown():
+    assert _client_with_settings(_Settings()).scoring_format() == "ppr"
+
+
+def test_lineup_slots_exclude_bench_and_zero_counts():
+    s = _Settings(position_slot_counts={"QB": 1, "RB": 2, "WR": 2, "FLEX": 0,
+                                        "BE": 5, "IR": 1, "": 0})
+    slots = _client_with_settings(s).lineup_slots()
+    assert slots == {"QB": 1, "RB": 2, "WR": 2}
+
+
+def test_build_snapshot_carries_scoring_and_lineup():
+    s = _Settings(scoring_format=[{"abbr": "REC", "id": 53, "points": 1.0}],
+                  position_slot_counts={"QB": 1, "RB": 2, "BE": 5})
+    snap = _client_with_settings(s).build_snapshot()
+    assert snap.scoring_format == "ppr"
+    assert snap.lineup_slots == {"QB": 1, "RB": 2}

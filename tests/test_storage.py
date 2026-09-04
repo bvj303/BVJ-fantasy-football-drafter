@@ -145,3 +145,50 @@ def test_storage_creates_parent_directories(tmp_path):
     with Storage(path) as s:
         s.write_snapshot(mk_snapshot(NOW))
     assert path.exists()
+
+
+def test_migration_adds_new_columns_to_a_v1_database(tmp_path):
+    """A database created before projections existed must gain the columns."""
+    import sqlite3
+    path = tmp_path / "v1.db"
+    con = sqlite3.connect(path)
+    # Minimal v1-shaped tables lacking the later columns.
+    con.executescript(
+        "CREATE TABLE snapshots (id INTEGER PRIMARY KEY AUTOINCREMENT, "
+        "taken_at TEXT, league_id INTEGER, year INTEGER, current_week INTEGER);"
+        "CREATE TABLE snapshot_players (id INTEGER PRIMARY KEY AUTOINCREMENT, "
+        "snapshot_id INTEGER, team_name TEXT, name TEXT, espn_id INTEGER);"
+        "CREATE TABLE teams (id INTEGER PRIMARY KEY AUTOINCREMENT, "
+        "snapshot_id INTEGER);"
+        "CREATE TABLE activity (id INTEGER PRIMARY KEY AUTOINCREMENT);"
+    )
+    con.commit()
+    con.close()
+
+    with Storage(path) as store:
+        cols = {r["name"] for r in
+                store.conn.execute("PRAGMA table_info(snapshots)")}
+        assert {"scoring_format", "lineup_slots"} <= cols
+        pcols = {r["name"] for r in
+                 store.conn.execute("PRAGMA table_info(snapshot_players)")}
+        assert {"sleeper_proj_season", "sleeper_proj_week"} <= pcols
+
+
+def test_scoring_format_and_lineup_slots_round_trip(storage):
+    snap = mk_snapshot(NOW)
+    snap.scoring_format = "half"
+    snap.lineup_slots = {"QB": 1, "RB": 2, "WR": 2, "FLEX": 1}
+    storage.write_snapshot(snap)
+    loaded = storage.latest_snapshot()
+    assert loaded.scoring_format == "half"
+    assert loaded.lineup_slots["RB"] == 2
+
+
+def test_projection_fields_round_trip(storage):
+    snap = mk_snapshot(NOW)
+    snap.teams[0].roster[0].sleeper_proj_season = 288.4
+    snap.teams[0].roster[0].sleeper_proj_week = 18.1
+    storage.write_snapshot(snap)
+    p = storage.latest_snapshot().teams[0].roster[0]
+    assert p.sleeper_proj_season == 288.4
+    assert p.sleeper_proj_week == 18.1

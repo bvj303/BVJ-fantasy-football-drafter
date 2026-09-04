@@ -110,3 +110,60 @@ def test_invalid_trending_type_is_rejected(client):
 def test_trending_is_not_cached_to_disk(client, tmp_path):
     client.fetch_trending("add")
     assert not (tmp_path / "sleeper_trending_add.json").exists()
+
+
+# --- projections ------------------------------------------------------------
+
+@pytest.fixture
+def proj_session(sleeper_players, trending_add, trending_drop, proj_season,
+                 proj_week1):
+    return RecordingSession({
+        "/players/nfl/trending/add": trending_add,
+        "/players/nfl/trending/drop": trending_drop,
+        "/players/nfl": sleeper_players,
+        "/projections/nfl/2026/1": proj_week1,
+        "/projections/nfl/2026": proj_season,
+    })
+
+
+@pytest.fixture
+def proj_client(tmp_path, proj_session):
+    return SleeperClient(cache_dir=tmp_path, session=proj_session)
+
+
+def test_fetch_season_projections_returns_points_by_format(proj_client):
+    proj = proj_client.fetch_projections(2026)
+    cmc = proj["4034"]
+    assert cmc["ppr"] > 0
+    assert cmc["half"] <= cmc["ppr"]
+    assert cmc["std"] <= cmc["half"]
+
+
+def test_fetch_weekly_projections_hits_week_endpoint(proj_client, proj_session):
+    proj_client.fetch_projections(2026, week=1)
+    assert any("/projections/nfl/2026/1" in c[0] for c in proj_session.calls)
+
+
+def test_season_and_weekly_use_different_endpoints(proj_client, proj_session):
+    proj_client.fetch_projections(2026)
+    urls = [c[0] for c in proj_session.calls]
+    assert any(u.endswith("/projections/nfl/2026") for u in urls)
+    assert not any("/projections/nfl/2026/1" in u for u in urls)
+
+
+def test_projections_are_cached_to_disk(proj_client, tmp_path):
+    proj_client.fetch_projections(2026)
+    assert list(tmp_path.glob("sleeper_proj*.json"))
+
+
+def test_second_projection_fetch_uses_cache(proj_client, proj_session):
+    proj_client.fetch_projections(2026)
+    proj_client.fetch_projections(2026)
+    calls = [c for c in proj_session.calls if c[0].endswith("/nfl/2026")]
+    assert len(calls) == 1
+
+
+def test_missing_points_field_is_none_not_crash(proj_client):
+    proj = proj_client.fetch_projections(2026)
+    # every returned record must carry all three keys, even if None
+    assert all({"ppr", "half", "std"} <= set(v) for v in proj.values())

@@ -15,8 +15,11 @@ league-wide is useless to me if a rival already rostered him. Never recommend
 someone who appears on any team's roster in `teams`.
 
 1. Start from `free_agents`, weighting `trending_add_count` (Sleeper's
-   cross-platform add signal over the last 24h) alongside season points,
-   projections, and `percent_owned`.
+   cross-platform add signal over the last 24h) alongside `sleeper_proj_season`
+   / `projected_total_points` (rest-of-season projections), season points so
+   far, and `percent_owned`. Aim the search at the positions in
+   `analysis.weak_spots` — a great WR on the wire barely helps if my WRs are
+   already above league median and my hole is at RB.
 2. Treat `injury_status` as a filter, not a footnote — a trending add who is
    `Out` or on IR is a stash, not a starter, and you should label it as such.
 3. Use WebSearch on your top candidates before recommending them. Trending adds

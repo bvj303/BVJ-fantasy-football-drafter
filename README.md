@@ -72,9 +72,28 @@ players a rival just claimed.
 .venv/bin/ffdraft roster                        # your team
 .venv/bin/ffdraft roster --team "Some Rival"    # anyone else's
 .venv/bin/ffdraft league                        # standings + every roster
+.venv/bin/ffdraft analyze                        # weak spots vs the league
+.venv/bin/ffdraft analyze --team "Some Rival"    # grade anyone's roster
 .venv/bin/ffdraft export                        # write data/latest.json
 .venv/bin/ffdraft history "Christian McCaffrey" # one player across syncs
 ```
+
+### Projections and roster analysis
+
+Every sync now pulls **two independent projections** per player: ESPN's own
+(`projected_total_points`) and Sleeper's (`sleeper_proj_season`), converted to
+your league's scoring — which is **auto-detected** (PPR / half / standard) from
+ESPN's settings, along with your exact starting-lineup structure. Where the two
+projections disagree sharply, that's a signal in its own right.
+
+`ffdraft analyze` sets your optimal lineup, then grades **each starting slot
+against what your actual opponents start at the same slot** — so a "weak spot"
+is a slot where you'd lose the positional matchup most weeks, not just a low
+number in the abstract. It reports the gap to your league's median starter, your
+percentile, injury flags on starters, ESPN-vs-Sleeper disagreements, and your
+startable depth by position. The same analysis rides along in
+`data/latest.json` (an `analysis` block) so `/trade-finder` and
+`/waiver-targets` reason from it.
 
 ### The slash commands
 
@@ -106,9 +125,11 @@ Sleeper (public) ─┘                                                         
 | `config.py` | Loads `.env`; credentials are `repr`-masked so they can't leak into a log |
 | `espn_client.py` | The only place that touches `espn_api`; converts its objects into our own dataclasses |
 | `sleeper_client.py` | Sleeper's free public API. The ~14MB player dump is disk-cached with a 24h TTL, as Sleeper asks; the small trending endpoints are always fresh |
-| `enrichment.py` | Joins the two sources (see below) |
-| `storage.py` | SQLite. Each sync appends a complete snapshot rather than overwriting, so history is queryable |
-| `cli.py` | The `ffdraft` command. Contains no trade or waiver judgement by design |
+| `sleeper_client.py` | *(also)* serves season/weekly **projections** (std/half/PPR), cached with a shorter TTL since they move through the week |
+| `enrichment.py` | Joins the two sources (see below) and attaches projections in the league's scoring |
+| `analysis.py` | Deterministic roster analysis: optimal-lineup fill, per-slot benchmarking against the league, weak-spot ranking |
+| `storage.py` | SQLite. Each sync appends a complete snapshot rather than overwriting, so history is queryable. Schema changes apply via idempotent migrations on open |
+| `cli.py` | The `ffdraft` command. Contains no *trade* judgement by design; `analyze` is deterministic and comparative |
 
 ### On matching players between ESPN and Sleeper
 

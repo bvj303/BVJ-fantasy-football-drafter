@@ -124,3 +124,53 @@ def test_sleeper_records_without_a_name_are_skipped_safely(enricher):
     # The DEF entry in the fixture has full_name = null.
     p = enricher.enrich(mk("San Francisco 49ers D/ST", 111, "D/ST", "SF"))
     assert p.sleeper_id is None or p.position == "D/ST"
+
+
+# --- projections ------------------------------------------------------------
+
+@pytest.fixture
+def enricher_with_proj(sleeper_players, proj_season, proj_week1):
+    season = {r["player_id"]: {"ppr": r["stats"].get("pts_ppr"),
+                               "half": r["stats"].get("pts_half_ppr"),
+                               "std": r["stats"].get("pts_std")}
+              for r in proj_season}
+    week = {r["player_id"]: {"ppr": r["stats"].get("pts_ppr"),
+                             "half": r["stats"].get("pts_half_ppr"),
+                             "std": r["stats"].get("pts_std")}
+            for r in proj_week1}
+    return Enricher(sleeper_players, projections_season=season,
+                    projections_week=week, scoring_format="ppr")
+
+
+def test_projection_is_attached_in_league_scoring_format(enricher_with_proj):
+    p = enricher_with_proj.enrich(mk("Christian McCaffrey", 3117251, "RB", "SF"))
+    assert p.sleeper_proj_season is not None
+    assert p.sleeper_proj_season > 0
+
+
+def test_scoring_format_selects_the_right_points(sleeper_players, proj_season):
+    season = {r["player_id"]: {"ppr": 300.0, "half": 250.0, "std": 200.0}
+              for r in proj_season}
+    for fmt, expected in (("ppr", 300.0), ("half", 250.0), ("std", 200.0)):
+        e = Enricher(sleeper_players, projections_season=season,
+                     scoring_format=fmt)
+        p = e.enrich(mk("Christian McCaffrey", 3117251, "RB", "SF"))
+        assert p.sleeper_proj_season == expected
+
+
+def test_unmatched_player_has_no_projection(enricher_with_proj):
+    p = enricher_with_proj.enrich(mk("Nobody McGhost", 424242, "WR", "FA"))
+    assert p.sleeper_proj_season is None
+
+
+def test_projection_absent_for_player_not_in_projection_set(sleeper_players):
+    e = Enricher(sleeper_players, projections_season={}, scoring_format="ppr")
+    p = e.enrich(mk("Christian McCaffrey", 3117251, "RB", "SF"))
+    assert p.sleeper_id == "4034"          # still matched for injury data
+    assert p.sleeper_proj_season is None   # just no projection available
+
+
+def test_enricher_without_projections_still_works(enricher):
+    p = enricher.enrich(mk("Christian McCaffrey", 3117251, "RB", "SF"))
+    assert p.injury_status == "Questionable"
+    assert p.sleeper_proj_season is None

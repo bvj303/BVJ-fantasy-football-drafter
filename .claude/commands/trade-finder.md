@@ -9,13 +9,20 @@ Find me trades worth proposing.
 more than ~24 hours old, run `.venv/bin/ffdraft sync && .venv/bin/ffdraft export`
 first and then read it.
 
-**Then reason it out yourself.** The pipeline gives you the state of the league;
-it deliberately holds no trade-value model. The analysis is yours to do.
+**Then reason it out yourself.** The pipeline gives you the state of the league
+plus a deterministic weak-spot map; it deliberately holds no trade-value model.
+The judgement is yours to do.
 
-1. **Diagnose my roster** (`my_team` in the JSON). Where am I actually weak —
-   not by name value, but by what I start each week? Look at starters vs bench,
-   points scored vs projected, injuries (`injury_status`), and positions where
-   my starter is replacement-level. Note upcoming bye-week holes.
+1. **Start from the `analysis` block**, then sanity-check it against the rosters.
+   `analysis.weak_spots` already ranks the starting slots where I project below
+   my league's median starter (worst first), `analysis.slots` gives every slot's
+   gap and percentile, `analysis.injury_flags` names hurt starters, and
+   `analysis.projection_disagreements` flags players where ESPN and Sleeper
+   diverge — often a buy-low or sell-high angle. Each player carries two
+   projections: `projected_total_points` (ESPN) and `sleeper_proj_season`
+   (Sleeper, in my league's scoring) — lean on both, and treat a wide split as
+   uncertainty. Confirm the flagged holes are real by eyeballing my starters vs
+   bench before you build around them.
 2. **Read the other rosters** (`teams`). For each rival, find the mirror image:
    who has a surplus at my position of need, and a hole at a position where I
    have surplus? Those are the only managers worth approaching.

@@ -1,0 +1,442 @@
+[
+  {
+    "player_id": "4984",
+    "stats": {
+      "gp": 18.0,
+      "pts_half_ppr": 361.5,
+      "pts_ppr": 361.5,
+      "pts_std": 361.5
+    },
+    "week": null
+  },
+  {
+    "player_id": "9221",
+    "stats": {
+      "gp": 18.0,
+      "pts_half_ppr": 299.9,
+      "pts_ppr": 331.4,
+      "pts_std": 268.4
+    },
+    "week": null
+  },
+  {
+    "player_id": "4881",
+    "stats": {
+      "gp": 18.0,
+      "pts_half_ppr": 326.0,
+      "pts_ppr": 326.0,
+      "pts_std": 326.0
+    },
+    "week": null
+  },
+  {
+    "player_id": "9509",
+    "stats": {
+      "gp": 18.0,
+      "pts_half_ppr": 292.9,
+      "pts_ppr": 324.9,
+      "pts_std": 260.9
+    },
+    "week": null
+  },
+  {
+    "player_id": "11564",
+    "stats": {
+      "gp": 18.0,
+      "pts_half_ppr": 320.76,
+      "pts_ppr": 320.76,
+      "pts_std": 320.76
+    },
+    "week": null
+  },
+  {
+    "player_id": "9493",
+    "stats": {
+      "gp": 18.0,
+      "pts_half_ppr": 259.0,
+      "pts_ppr": 312.5,
+      "pts_std": 205.5
+    },
+    "week": null
+  },
+  {
+    "player_id": "7564",
+    "stats": {
+      "gp": 18.0,
+      "pts_half_ppr": 256.6,
+      "pts_ppr": 311.1,
+      "pts_std": 202.1
+    },
+    "week": null
+  },
+  {
+    "player_id": "6904",
+    "stats": {
+      "gp": 18.0,
+      "pts_half_ppr": 310.54,
+      "pts_ppr": 310.54,
+      "pts_std": 310.54
+    },
+    "week": null
+  },
+  {
+    "player_id": "11566",
+    "stats": {
+      "gp": 18.0,
+      "pts_half_ppr": 308.72,
+      "pts_ppr": 308.72,
+      "pts_std": 308.72
+    },
+    "week": null
+  },
+  {
+    "player_id": "6770",
+    "stats": {
+      "gp": 18.0,
+      "pts_half_ppr": 306.12,
+      "pts_ppr": 306.12,
+      "pts_std": 306.12
+    },
+    "week": null
+  },
+  {
+    "player_id": "3294",
+    "stats": {
+      "gp": 18.0,
+      "pts_half_ppr": 303.88,
+      "pts_ppr": 303.88,
+      "pts_std": 303.88
+    },
+    "week": null
+  },
+  {
+    "player_id": "7523",
+    "stats": {
+      "gp": 18.0,
+      "pts_half_ppr": 303.42,
+      "pts_ppr": 303.42,
+      "pts_std": 303.42
+    },
+    "week": null
+  },
+  {
+    "player_id": "8183",
+    "stats": {
+      "gp": 18.0,
+      "pts_half_ppr": 303.2,
+      "pts_ppr": 303.2,
+      "pts_std": 303.2
+    },
+    "week": null
+  },
+  {
+    "player_id": "11560",
+    "stats": {
+      "gp": 18.0,
+      "pts_half_ppr": 299.34,
+      "pts_ppr": 299.34,
+      "pts_std": 299.34
+    },
+    "week": null
+  },
+  {
+    "player_id": "12508",
+    "stats": {
+      "gp": 18.0,
+      "pts_half_ppr": 296.54,
+      "pts_ppr": 296.54,
+      "pts_std": 296.54
+    },
+    "week": null
+  },
+  {
+    "player_id": "11563",
+    "stats": {
+      "gp": 18.0,
+      "pts_half_ppr": 295.72,
+      "pts_ppr": 295.72,
+      "pts_std": 295.72
+    },
+    "week": null
+  },
+  {
+    "player_id": "6797",
+    "stats": {
+      "gp": 18.0,
+      "pts_half_ppr": 295.48,
+      "pts_ppr": 295.48,
+      "pts_std": 295.48
+    },
+    "week": null
+  },
+  {
+    "player_id": "4034",
+    "stats": {
+      "gp": 18.0,
+      "pts_half_ppr": 256.0,
+      "pts_ppr": 291.0,
+      "pts_std": 221.0
+    },
+    "week": null
+  },
+  {
+    "player_id": "4046",
+    "stats": {
+      "gp": 18.0,
+      "pts_half_ppr": 286.68,
+      "pts_ppr": 286.68,
+      "pts_std": 286.68
+    },
+    "week": null
+  },
+  {
+    "player_id": "9488",
+    "stats": {
+      "gp": 18.0,
+      "pts_half_ppr": 235.1,
+      "pts_ppr": 284.6,
+      "pts_std": 185.6
+    },
+    "week": null
+  },
+  {
+    "player_id": "3163",
+    "stats": {
+      "gp": 18.0,
+      "pts_half_ppr": 283.46,
+      "pts_ppr": 283.46,
+      "pts_std": 283.46
+    },
+    "week": null
+  },
+  {
+    "player_id": "5849",
+    "stats": {
+      "gp": 18.0,
+      "pts_half_ppr": 283.06,
+      "pts_ppr": 283.06,
+      "pts_std": 283.06
+    },
+    "week": null
+  },
+  {
+    "player_id": "7547",
+    "stats": {
+      "gp": 18.0,
+      "pts_half_ppr": 227.5,
+      "pts_ppr": 280.5,
+      "pts_std": 174.5
+    },
+    "week": null
+  },
+  {
+    "player_id": "421",
+    "stats": {
+      "gp": 18.0,
+      "pts_half_ppr": 280.22,
+      "pts_ppr": 280.22,
+      "pts_std": 280.22
+    },
+    "week": null
+  },
+  {
+    "player_id": "6804",
+    "stats": {
+      "gp": 18.0,
+      "pts_half_ppr": 278.52,
+      "pts_ppr": 278.52,
+      "pts_std": 278.52
+    },
+    "week": null
+  },
+  {
+    "player_id": "4892",
+    "stats": {
+      "gp": 18.0,
+      "pts_half_ppr": 274.88,
+      "pts_ppr": 274.88,
+      "pts_std": 274.88
+    },
+    "week": null
+  },
+  {
+    "player_id": "6813",
+    "stats": {
+      "gp": 18.0,
+      "pts_half_ppr": 254.3,
+      "pts_ppr": 272.3,
+      "pts_std": 236.3
+    },
+    "week": null
+  },
+  {
+    "player_id": "12545",
+    "stats": {
+      "gp": 18.0,
+      "pts_half_ppr": 270.94,
+      "pts_ppr": 270.94,
+      "pts_std": 270.94
+    },
+    "week": null
+  },
+  {
+    "player_id": "6786",
+    "stats": {
+      "gp": 18.0,
+      "pts_half_ppr": 222.5,
+      "pts_ppr": 270.5,
+      "pts_std": 174.5
+    },
+    "week": null
+  },
+  {
+    "player_id": "8161",
+    "stats": {
+      "gp": 18.0,
+      "pts_half_ppr": 270.12,
+      "pts_ppr": 270.12,
+      "pts_std": 270.12
+    },
+    "week": null
+  },
+  {
+    "player_id": "4943",
+    "stats": {
+      "gp": 18.0,
+      "pts_half_ppr": 262.74,
+      "pts_ppr": 262.74,
+      "pts_std": 262.74
+    },
+    "week": null
+  },
+  {
+    "player_id": "7569",
+    "stats": {
+      "gp": 18.0,
+      "pts_half_ppr": 220.0,
+      "pts_ppr": 262.0,
+      "pts_std": 178.0
+    },
+    "week": null
+  },
+  {
+    "player_id": "8138",
+    "stats": {
+      "gp": 18.0,
+      "pts_half_ppr": 245.3,
+      "pts_ppr": 260.8,
+      "pts_std": 229.8
+    },
+    "week": null
+  },
+  {
+    "player_id": "9226",
+    "stats": {
+      "gp": 18.0,
+      "pts_half_ppr": 229.9,
+      "pts_ppr": 257.4,
+      "pts_std": 202.4
+    },
+    "week": null
+  },
+  {
+    "player_id": "9224",
+    "stats": {
+      "gp": 18.0,
+      "pts_half_ppr": 226.7,
+      "pts_ppr": 255.2,
+      "pts_std": 198.2
+    },
+    "week": null
+  },
+  {
+    "player_id": "11604",
+    "stats": {
+      "gp": 18.0,
+      "pts_half_ppr": 202.5,
+      "pts_ppr": 253.5,
+      "pts_std": 151.5
+    },
+    "week": null
+  },
+  {
+    "player_id": "6794",
+    "stats": {
+      "gp": 18.0,
+      "pts_half_ppr": 205.4,
+      "pts_ppr": 250.4,
+      "pts_std": 160.4
+    },
+    "week": null
+  },
+  {
+    "player_id": "8112",
+    "stats": {
+      "gp": 18.0,
+      "pts_half_ppr": 205.2,
+      "pts_ppr": 250.2,
+      "pts_std": 160.2
+    },
+    "week": null
+  },
+  {
+    "player_id": "11628",
+    "stats": {
+      "gp": 18.0,
+      "pts_half_ppr": 155.2,
+      "pts_ppr": 186.2,
+      "pts_std": 124.2
+    },
+    "week": null
+  },
+  {
+    "player_id": "8111",
+    "stats": {
+      "gp": 18.0,
+      "pts_half_ppr": 95.8,
+      "pts_ppr": 122.3,
+      "pts_std": 69.3
+    },
+    "week": null
+  },
+  {
+    "player_id": "11533",
+    "stats": {
+      "gp": 18.0,
+      "pts_half_ppr": 116.0,
+      "pts_ppr": 116.0,
+      "pts_std": 116.0
+    },
+    "week": null
+  },
+  {
+    "player_id": "9508",
+    "stats": {
+      "gp": 18.0,
+      "pts_half_ppr": 97.1,
+      "pts_ppr": 114.6,
+      "pts_std": 79.6
+    },
+    "week": null
+  },
+  {
+    "player_id": "7049",
+    "stats": {
+      "gp": 18.0,
+      "pts_half_ppr": 86.2,
+      "pts_ppr": 105.7,
+      "pts_std": 66.7
+    },
+    "week": null
+  },
+  {
+    "player_id": "11589",
+    "stats": {
+      "gp": 18.0,
+      "pts_half_ppr": null,
+      "pts_ppr": null,
+      "pts_std": null
+    },
+    "week": null
+  }
+]
