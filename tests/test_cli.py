@@ -17,7 +17,7 @@ def runner():
 
 @pytest.fixture
 def wired(monkeypatch, tmp_path, fake_espn_league, sleeper_players,
-          trending_add, trending_drop):
+          trending_add, trending_drop, proj_season, proj_week1):
     """Point the CLI at fakes and a temp database."""
     cfg = Config(league_id=999, year=2025, espn_s2=None, espn_swid=None,
                  my_team_name="Team Bologna",
@@ -40,6 +40,13 @@ def wired(monkeypatch, tmp_path, fake_espn_league, sleeper_players,
         def fetch_trending(self, kind, lookback_hours=24, limit=25):
             data = trending_add if kind == "add" else trending_drop
             return {d["player_id"]: d["count"] for d in data}
+
+        def fetch_projections(self, season, week=None):
+            rows = proj_week1 if week is not None else proj_season
+            return {r["player_id"]: {"ppr": r["stats"].get("pts_ppr"),
+                                     "half": r["stats"].get("pts_half_ppr"),
+                                     "std": r["stats"].get("pts_std")}
+                    for r in rows}
 
     monkeypatch.setattr(cli_module, "SleeperClient", FakeSleeper)
     return cfg
@@ -125,3 +132,49 @@ def test_export_never_contains_credentials(runner, wired, monkeypatch):
     runner.invoke(cli_module.cli, ["export"])
     text = wired.export_path.read_text().lower()
     assert "espn_s2" not in text and "swid" not in text
+
+
+def test_sync_attaches_projections(runner, wired):
+    runner.invoke(cli_module.cli, ["sync"])
+    runner.invoke(cli_module.cli, ["export"])
+    data = json.loads(wired.export_path.read_text())
+    cmc = [p for p in data["my_team"]["roster"]
+           if p["name"] == "Christian McCaffrey"][0]
+    assert cmc["sleeper_proj_season"] is not None
+
+
+def test_analyze_runs_and_reports_slots(runner, wired):
+    runner.invoke(cli_module.cli, ["sync"])
+    res = runner.invoke(cli_module.cli, ["analyze"])
+    assert res.exit_code == 0, res.output
+    assert "Roster analysis" in res.output
+    assert "Team Bologna" in res.output
+
+
+def test_analyze_requires_a_sync_first(runner, wired):
+    res = runner.invoke(cli_module.cli, ["analyze"])
+    assert res.exit_code != 0
+    assert "ffdraft sync" in res.output
+
+
+def test_analyze_accepts_a_team_flag(runner, wired):
+    runner.invoke(cli_module.cli, ["sync"])
+    res = runner.invoke(cli_module.cli, ["analyze", "--team", "Gridiron Goblins"])
+    assert res.exit_code == 0, res.output
+    assert "Gridiron Goblins" in res.output
+
+
+def test_export_includes_analysis_block(runner, wired):
+    runner.invoke(cli_module.cli, ["sync"])
+    runner.invoke(cli_module.cli, ["export"])
+    data = json.loads(wired.export_path.read_text())
+    assert data["analysis"]["team_name"] == "Team Bologna"
+    assert "weak_spots" in data["analysis"]
+
+
+def test_export_carries_scoring_and_lineup(runner, wired):
+    runner.invoke(cli_module.cli, ["sync"])
+    runner.invoke(cli_module.cli, ["export"])
+    data = json.loads(wired.export_path.read_text())
+    assert data["scoring_format"] == "ppr"
+    assert "lineup_slots" in data
