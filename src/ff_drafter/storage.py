@@ -10,6 +10,7 @@ UTC datetimes.
 """
 from __future__ import annotations
 
+import json
 import sqlite3
 from datetime import datetime, timezone
 from pathlib import Path
@@ -21,10 +22,12 @@ from .models import (Activity, InjuryChange, LeagueSnapshot, Player,
 SCHEMA = """
 CREATE TABLE IF NOT EXISTS snapshots (
     id            INTEGER PRIMARY KEY AUTOINCREMENT,
-    taken_at      TEXT    NOT NULL,
-    league_id     INTEGER NOT NULL,
-    year          INTEGER NOT NULL,
-    current_week  INTEGER NOT NULL
+    taken_at       TEXT    NOT NULL,
+    league_id      INTEGER NOT NULL,
+    year           INTEGER NOT NULL,
+    current_week   INTEGER NOT NULL,
+    scoring_format TEXT,
+    lineup_slots   TEXT
 );
 
 CREATE TABLE IF NOT EXISTS teams (
@@ -68,7 +71,9 @@ CREATE TABLE IF NOT EXISTS snapshot_players (
     eligible_slots         TEXT,
     acquisition_type       TEXT,
     trending_add_count     INTEGER,
-    trending_drop_count    INTEGER
+    trending_drop_count    INTEGER,
+    sleeper_proj_season    REAL,
+    sleeper_proj_week      REAL
 );
 
 CREATE TABLE IF NOT EXISTS activity (
@@ -96,7 +101,16 @@ _PLAYER_COLUMNS = (
     "projected_total_points", "avg_points", "projected_avg_points",
     "percent_owned", "percent_started", "position_rank", "eligible_slots",
     "acquisition_type", "trending_add_count", "trending_drop_count",
+    "sleeper_proj_season", "sleeper_proj_week",
 )
+
+# Columns added after the initial schema. Applied idempotently on open so a
+# database created by an earlier version gains them without a manual rebuild.
+_MIGRATIONS = {
+    "snapshots": [("scoring_format", "TEXT"), ("lineup_slots", "TEXT")],
+    "snapshot_players": [("sleeper_proj_season", "REAL"),
+                         ("sleeper_proj_week", "REAL")],
+}
 
 
 class Storage:
@@ -107,7 +121,18 @@ class Storage:
         self.conn.row_factory = sqlite3.Row
         self.conn.execute("PRAGMA foreign_keys = ON")
         self.conn.executescript(SCHEMA)
+        self._migrate()
         self.conn.commit()
+
+    def _migrate(self) -> None:
+        """Add columns introduced after a database was first created."""
+        for table, columns in _MIGRATIONS.items():
+            existing = {row["name"] for row in
+                        self.conn.execute(f"PRAGMA table_info({table})")}
+            for name, coltype in columns:
+                if name not in existing:
+                    self.conn.execute(
+                        f"ALTER TABLE {table} ADD COLUMN {name} {coltype}")
 
     def __enter__(self) -> "Storage":
         return self
@@ -128,10 +153,11 @@ class Storage:
     def write_snapshot(self, snapshot: LeagueSnapshot) -> int:
         cur = self.conn.cursor()
         cur.execute(
-            "INSERT INTO snapshots (taken_at, league_id, year, current_week) "
-            "VALUES (?, ?, ?, ?)",
+            "INSERT INTO snapshots (taken_at, league_id, year, current_week, "
+            "scoring_format, lineup_slots) VALUES (?, ?, ?, ?, ?, ?)",
             (_to_utc_iso(snapshot.taken_at), snapshot.league_id,
-             snapshot.year, snapshot.current_week),
+             snapshot.year, snapshot.current_week, snapshot.scoring_format,
+             json.dumps(snapshot.lineup_slots)),
         )
         snapshot_id = cur.lastrowid
 
@@ -175,6 +201,7 @@ class Storage:
             player.percent_started, player.position_rank,
             "|".join(player.eligible_slots), player.acquisition_type,
             player.trending_add_count, player.trending_drop_count,
+            player.sleeper_proj_season, player.sleeper_proj_week,
         )
         placeholders = ",".join("?" * (len(_PLAYER_COLUMNS) + 1))
         cur.execute(
@@ -229,6 +256,9 @@ class Storage:
             taken_at=_from_utc_iso(row["taken_at"]), league_id=row["league_id"],
             year=row["year"], current_week=row["current_week"], teams=teams,
             free_agents=by_team.get(None, []), activity=activity,
+            scoring_format=(row["scoring_format"] or "ppr"),
+            lineup_slots=json.loads(row["lineup_slots"])
+            if row["lineup_slots"] else {},
         )
 
     def player_history(self, espn_id: Optional[int] = None,
@@ -339,6 +369,8 @@ def _row_to_player(row: sqlite3.Row) -> Player:
         depth_chart_order=row["depth_chart_order"],
         trending_add_count=row["trending_add_count"],
         trending_drop_count=row["trending_drop_count"],
+        sleeper_proj_season=row["sleeper_proj_season"],
+        sleeper_proj_week=row["sleeper_proj_week"],
     )
 
 
